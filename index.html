@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Специально для полиныфд</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#fff0f5;
+      --bg2:#ffe4e9;
+      --accent:#ff7aa8;
+      --text:#2c2c2c;
+      --muted:#666;
+      --border:rgba(0,0,0,0.1);
+      --transition:0.25s ease;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;width:100%;overflow:hidden}
+    body{
+      font-family:'Inter',sans-serif;
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .card{
+      position:relative;
+      width:clamp(320px,90%,960px);
+      height:clamp(500px,90vh,800px);
+      background:rgba(255,255,255,0.85);
+      border:1px solid var(--border);
+      border-radius:28px;
+      box-shadow:0 0 60px rgba(255,182,193,0.6);
+      padding:clamp(20px,4vw,48px);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      overflow:hidden;
+      backdrop-filter:blur(10px);
+    }
+    header{text-align:center;margin-bottom:12px}
+    h1{font-size:clamp(20px,2.6vw,34px);font-weight:800;color:#ff3f7f;text-transform:uppercase;letter-spacing:0.04em}
+    p.lead{color:var(--muted);margin-top:6px}
+
+    .welcome{
+      position:fixed;inset:0;
+      background:rgba(255,240,245,0.9);
+      display:flex;align-items:center;justify-content:center;
+      z-index:30;backdrop-filter:blur(10px)
+    }
+    .sheet{
+      background:rgba(255,255,255,0.95);padding:28px;border-radius:20px;
+      border:1px solid var(--border);box-shadow:0 0 30px rgba(255,182,193,0.4);max-width:420px;width:92%;text-align:center;
+    }
+    .sheet h2{margin:0 0 8px 0}
+    .sheet input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);margin-top:12px;font-size:15px}
+    .errorMsg{min-height:22px;margin-top:10px;color:#d23a6a;font-weight:600}
+
+    .quiz{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;text-align:center}
+    .progress{height:8px;background:rgba(0,0,0,0.06);border-radius:999px;overflow:hidden;margin:0 auto;width:80%}
+    .progress>i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s ease}
+    .question{font-size:clamp(16px,2vw,22px);font-weight:700;margin-top:12px}
+    .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:0 10%}
+    .choice{padding:12px;border-radius:12px;border:1px solid var(--border);background:white;cursor:pointer;transition:all var(--transition)}
+    .choice:hover{transform:translateY(-4px);background:#ffe9f1}
+    .choice.selected{background:var(--accent);color:white}
+
+    .controls{display:flex;justify-content:center;gap:12px;margin-top:8px}
+    .btn{padding:10px 20px;border-radius:12px;border:none;cursor:pointer;font-weight:700;background:var(--accent);color:white;box-shadow:0 6px 18px rgba(255,138,168,0.18)}
+    .btn:active{transform:translateY(1px)}
+    .btn.black{background:#000;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.25)}
+
+    .result{display:none;flex-direction:column;align-items:center;gap:12px}
+    .result.show{display:flex}
+    .score{font-size:clamp(34px,4.5vw,56px);font-weight:800;color:var(--accent)}
+    footer{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:12px;color:var(--muted)}
+
+    /* stickers */
+    .sticker{position:fixed;width:72px;pointer-events:none;opacity:0.9}
+    @media(max-width:600px){.choices{padding:0 6%}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>Queendom</h1>
+      <p class="lead">Проверим насколько ты отличница по квиндому</p>
+    </header>
+
+    <main class="quiz">
+      <div class="progress"><i id="prog"></i></div>
+      <div id="qwrap"></div>
+
+      <div class="controls">
+        <button class="btn" id="nextBtn">Следующий</button>
+      </div>
+
+      <div class="result" id="result">
+        <div class="score" id="scoreVal"></div>
+        <div id="scoreText" style="color:var(--muted)"></div>
+        <button class="btn black" id="reprintBtn" style="display:none;position:relative;margin-top:8px">Хочешь увидеть, как рейпринты рейпринтятся?</button>
+      </div>
+    </main>
+
+    <footer>©amejaa</footer>
+  </div>
+
+  <!-- welcome / input -->
+  <div class="welcome" id="welcome">
+    <div class="sheet">
+      <h2>Миледи, введите имя</h2>
+      <input id="nameInput" placeholder="" autocomplete="off" />
+      <div class="errorMsg" id="errorMsg"></div>
+      <div style="margin-top:14px"><button class="btn" id="startBtn">К вопросам</button></div>
+    </div>
+  </div>
+
+  <!-- звуки -->
+  <audio id="selectSound" src="click.mp3" preload="auto"></audio>
+  <audio id="resultSound" src="end.mp3" preload="auto"></audio>
+
+  <!-- три плавающих стикера -->
+  <img class="sticker" src="sticker.png" alt="s1" />
+  <img class="sticker" src="sticker.png" alt="s2" />
+  <img class="sticker" src="sticker.png" alt="s3" />
+
+  <script>
+    // ====== QUESTIONS (из твоего списка), порядок перемешается ======
+    const QUESTIONS = [
+      {q:'Почему Принт и Рей оказываются в чужих телах?', a:['Из-за магического зеркала','После «ритуала»','Из-за солнечного затмения','Из-за проклятого кулона'], correct:1},
+      {q:'Кто первым признался в своих чувствах?', a:['Рей','Принт'], correct:1},
+      {q:'Что стало первым вирусным видео Принт?', a:['Её танец','Кулинарный влог','Сценка с братом','Падение на подиуме'], correct:0},
+      {q:'Кем была мама Рей по профессии?', a:['Продюсером','Актрисой','Певицей','Режиссёром'], correct:1},
+      {q:'После какой фразы Рей и Принт поцеловались?', a:['«Ты ничего не понимаешь»','«Хватит спорить»','«А если я не хочу быть друзьями?»','«Тогда докажи»'], correct:2},
+      {q:'После обмена телами где живут Рей и Принт?', a:['Обе остаются в доме Рей','Обе переезжают к Сайфон','Меняются домами','Живут в гостинице'], correct:2},
+      {q:'Сколько серий?', a:['13','9','10','12'], correct:3},
+      {q:'Кто больше всего любит розовый цвет?', a:['Принт','Рей','Сайфон','Лин'], correct:0},
+      {q:'Кто первый заподозрил, что героини поменялись телами?', a:['Фрэнк','Сайфон','Лин','Брат Принт'], correct:1},
+      {q:'Что объединяет Рей и Принт ещё до обмена телами?', a:['Конкуренция','Дружба','Семья','Случайная встреча'], correct:0},
+      {q:'Были ли они знакомы в школьное время?', a:['Да','Нет','Только по слухам','Познакомились на съёмках'], correct:0},
+      {q:'У кого есть родной брат?', a:['Рей','Принт','Лин','Сайфон'], correct:1},
+      {q:'Кто более ревнивый?', a:['Принт','Рей','Линн','Джей'], correct:0},
+      {q:'Почему в школьные годы Рей выиграла конкурс?', a:['Из-за внешности','Из-за мамы','Из-за популярности','Из-за помощи подруг'], correct:1},
+      {q:'Кто из них более аккуратный человек?', a:['Принт','Рей','Оба одинаково','Никто'], correct:1},
+      {q:'На что у Рей аллергия?', a:['Шоколад','Клубнику','Креветки','Манго'], correct:2},
+      {q:'Кто был против отношений Рей и Принт?', a:['Лин','Сайфон','Фрэнк','Никто'], correct:0},
+      {q:'Поехала ли Принт в другую страну на работу?', a:['Нет, она отказалась ради Рей','Поехала, но вернулась скоро','Её не отпустили'], correct:1},
+      {q:'Приняла ли Принт своего отчима?', a:['Да','Нет','Только притворялась','Никогда не встречалась с ним лично'], correct:0},
+      {q:'В чём Рей помогала Принт?', a:['В выборе нарядов','В актёрском','В ведении блога','В пиаре и рекламе'], correct:1},
+      {q:'Отказалась ли Рей от предложения мамы работать в Китае?', a:['Да, отказалась','Нет, согласилась сразу','Сначала согласилась, потом передумала','Уехала тайно'], correct:0}
+    ].sort(()=>Math.random()-0.5);
+
+    // ====== state & elements ======
+    let state = { name:'', i:0, score:0, selected:-1 };
+    const qwrap = document.getElementById('qwrap');
+    const prog = document.getElementById('prog');
+    const nextBtn = document.getElementById('nextBtn');
+    const resultBlock = document.getElementById('result');
+    const scoreVal = document.getElementById('scoreVal');
+    const scoreText = document.getElementById('scoreText');
+    const reprintBtn = document.getElementById('reprintBtn');
+    const selectSound = document.getElementById('selectSound');
+    const resultSound = document.getElementById('resultSound');
+
+    // welcome elements & validation
+    let nameAttempts = 0;
+    const correctName = 'отличницапоквиндому';
+    const welcome = document.getElementById('welcome');
+    const startBtn = document.getElementById('startBtn');
+    const nameInput = document.getElementById('nameInput');
+    const errorMsg = document.getElementById('errorMsg');
+
+    startBtn.addEventListener('click', validateName);
+    nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') validateName(); });
+
+    function validateName(){
+      const val = nameInput.value.trim().toLowerCase();
+      if(val === correctName){
+        state.name = val;
+        startQuiz();
+      } else {
+        nameAttempts++;
+        if(nameAttempts < 3){
+          errorMsg.textContent = 'Неверно. Подумай хорошо.';
+        } else {
+          errorMsg.textContent = 'мдаааа. полина, это же логично. правильное имя: отличницапоквиндому';
+        }
+      }
+    }
+
+    function startQuiz(){
+      welcome.style.display = 'none';
+      renderQuestion();
+    }
+
+    // ====== quiz functions ======
+    function renderQuestion(){
+      resultBlock.classList.remove('show');
+      reprintBtn.style.display = 'none';
+      nextBtn.style.display = 'inline-block';
+      const q = QUESTIONS[state.i];
+      qwrap.innerHTML = `<div class="question">${q.q}</div><div class="choices" id="choices"></div>`;
+      const choices = document.getElementById('choices');
+      q.a.forEach((txt, idx) => {
+        const d = document.createElement('div');
+        d.className = 'choice';
+        d.textContent = txt;
+        d.onclick = ()=> selectChoice(idx, d);
+        choices.appendChild(d);
+      });
+      state.selected = -1;
+      updateProgress();
+    }
+
+    function selectChoice(idx, el){
+      document.querySelectorAll('.choice').forEach(c=>c.classList.remove('selected'));
+      el.classList.add('selected');
+      state.selected = idx;
+      // play click
+      selectSound.currentTime = 0;
+      selectSound.play().catch(()=>{});
+    }
+
+    nextBtn.addEventListener('click', ()=>{
+      if(state.selected === -1){
+        // feedback: little animation
+        nextBtn.animate([{transform:'translateY(0)'},{transform:'translateY(-8px)'},{transform:'translateY(0)'}], {duration:220, easing:'ease-out'});
+        return;
+      }
+      if(state.selected === QUESTIONS[state.i].correct) state.score++;
+      state.i++;
+      state.selected = -1;
+      if(state.i >= QUESTIONS.length) showResult();
+      else renderQuestion();
+    });
+
+    function updateProgress(){
+      prog.style.width = (state.i / QUESTIONS.length * 100) + '%';
+    }
+
+     function showResult(){
+    qwrap.innerHTML = '';
+    prog.style.width = '100%';
+    scoreVal.textContent = `${state.score} / ${QUESTIONS.length}`;
+    const pct = Math.round(state.score / QUESTIONS.length * 100);
+
+   
+
+    // новая часть ↓↓↓
+    const finalLine = document.createElement('div');
+    finalLine.style.marginTop = '12px';
+    finalLine.style.fontWeight = '700';
+    finalLine.style.color = '#ff3f7f';
+    if (state.score < 21) {
+      finalLine.textContent = 'Никакая ты не отличница по квиндому 😤';
+    } else {
+      finalLine.textContent = 'Ай молодееец, точно отличница по квиндому 💅';
+    }
+    scoreText.after(finalLine);
+    // ↑↑↑ новая часть
+
+    resultBlock.classList.add('show');
+    resultSound.currentTime = 0;
+    resultSound.play().catch(()=>{});
+    nextBtn.style.display = 'none';
+    reprintBtn.style.display = 'inline-block';
+  }
+
+    // reprint button: убегает при наведении (только в пределах карточки)
+    reprintBtn.addEventListener('mouseenter', ()=>{
+      const card = document.querySelector('.card').getBoundingClientRect();
+      const btn = reprintBtn.getBoundingClientRect();
+      const padding = 12;
+      const maxX = Math.max(0, card.width - btn.width - padding*2);
+      const maxY = Math.max(0, card.height - btn.height - padding*2);
+      const x = padding + Math.random() * maxX;
+      const y = padding + Math.random() * maxY;
+      reprintBtn.style.position = 'absolute';
+      reprintBtn.style.left = `${x}px`;
+      reprintBtn.style.top = `${y}px`;
+    });
+
+    // ====== stickers floating (3 items), slow, clamped to viewport ======
+    const stickers = Array.from(document.querySelectorAll('.sticker'));
+    const STW = 72;
+    stickers.forEach((st)=>{
+      let x = Math.random() * (window.innerWidth - STW);
+      let y = Math.random() * (window.innerHeight - STW);
+      let vx = (Math.random() - 0.5) * 1.0; // небольшая скорость
+      let vy = (Math.random() - 0.5) * 1.0;
+      st.style.transform = `translate(${x}px, ${y}px)`;
+      function step(){
+        x += vx; y += vy;
+        // ограничение по границам
+        if(x < 0){ x = 0; vx = Math.abs(vx); }
+        if(x > window.innerWidth - STW){ x = window.innerWidth - STW; vx = -Math.abs(vx); }
+        if(y < 0){ y = 0; vy = Math.abs(vy); }
+        if(y > window.innerHeight - STW){ y = window.innerHeight - STW; vy = -Math.abs(vy); }
+        // плавное изменение направления
+        vx += (Math.random()-0.5)*0.08;
+        vy += (Math.random()-0.5)*0.08;
+        // clamp speeds
+        const maxV = 2;
+        vx = Math.max(-maxV, Math.min(maxV, vx));
+        vy = Math.max(-maxV, Math.min(maxV, vy));
+        st.style.transform = `translate(${x}px, ${y}px)`;
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+
+    // keep stickers inside on resize
+    window.addEventListener('resize', ()=>{
+      stickers.forEach(st=>{
+        // no-op; floats will re-clamp naturally in next frames
+      });
+    });
+
+    // initial empty state: qwrap blank until valid name entered
+  </script>
+</body>
+</html>
