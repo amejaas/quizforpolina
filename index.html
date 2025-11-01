@@ -289,9 +289,7 @@
       prog.style.width = '100%';
       scoreVal.textContent = `${state.score} / ${QUESTIONS.length}`;
       const pct = Math.round(state.score / QUESTIONS.length * 100);
-      if(pct >= 75) scoreText.textContent = ${state.name};
-      else if(pct >= 50) scoreText.textContent = ${state.name};
-      else scoreText.textContent = ${state.name};
+      
 
       // финальный комментарий (как просила)
       if(state.score === 21){
